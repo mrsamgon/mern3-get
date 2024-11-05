@@ -1,0 +1,6 @@
+# if i write any file name here or If I don't want to push any specif files to the github so
+# if I write a file name which I don;t want to push I have to write here like this👇👇
+# i don't want to push .env bcoz there is sesitive data is stored there that's why I don't want to push into the github
+
+.env 
+node_modules
