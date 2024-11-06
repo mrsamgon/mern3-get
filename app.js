@@ -5,6 +5,8 @@ const express = require("express")
 const conncetToDatabase = require("./database")
 const Blog = require("./model/blogModel")
 const app = express()
+const {multer, storage} = require("./middleware/multerConfig")
+const upload = multer({storage : storage})
 
 app.use(express.json()) // for malking understandable for the json
 
@@ -18,7 +20,7 @@ app.get("/", (req, res)=>{
 
 })
 
-app.post("/blog", async(req,res)=>{
+app.post("/blog", upload.single("image"), (req,res)=>{
 
     console.log(req.body)
     // const description = req.body.description
@@ -32,7 +34,7 @@ app.post("/blog", async(req,res)=>{
     //         message : " Please provide  title, subtitle , description , image"
     //     })
     // }
-    await Blog.create({
+     Blog.create({
         title : title, // right coloum and left one is variable which we mention on the top
         subtitle : subtitle,
         description : description,
