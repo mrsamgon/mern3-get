@@ -7,6 +7,7 @@ const Blog = require("./model/blogModel")
 const app = express()
 const {multer, storage} = require("./middleware/multerConfig")
 const upload = multer({storage : storage})
+const fs = require("fs") // file system
 
 app.use(express.json()) // for malking understandable for the json
 
@@ -52,7 +53,7 @@ app.post("/blog", upload.single("image"), async (req,res)=>{
 })
 
 app.get("/blog", async (req, res)=>{
-   const blogs = await Blog.find()
+   const blogs = await Blog.find() // returns in array
    res.status(200).json({
     message : "Blogs fetched successfully",
     data : blogs
@@ -60,12 +61,81 @@ app.get("/blog", async (req, res)=>{
 })
 
 app.get("about", (req, res)=>{
-    // res.send("Hello World")
     res.status(200).json({
         message : "This is about page"
     })
 
 })
+
+//day13
+app.get("/blog/:id", async(req, res)=>{
+    const id = req.params.id //this will show what user sended
+    const blog = await Blog.findById() // object
+    if(!blog){
+        res.status(404).json({
+            message : "Data not found please check "
+        })
+    }else{
+        res.status(200).json({
+            message : "Fetched Successfully",
+            data : blog
+        })
+    }
+})
+app.delete("/blog/:id", async (req, res)=>{
+    const id = req.params.id
+    const blog = await Blog.findById(id)
+    const imageName = blog.image
+
+
+    fs.unlink(`storage/${imageName}`, (err)=>{
+        if(err){
+            console.log(err)
+        }else{
+            console.log("file deleted succesfully")
+        }
+        
+    })
+    await Blog.findByIdAndDelete(id)
+   res.status(200).json({
+    message : "Blog deleted succesfully"
+   })
+
+})
+
+//update
+app.patch('/blog/:id',upload.single("image"), async (req, res)=>{
+    const id = req.params.id
+    const {title, subtitle, description} = req.body
+    let NewimageName;
+    if(req.file){
+        NewimageName = req.file.filename
+        const blog = await Blog.findById(id)
+        const imageName = blog.image
+
+
+        fs.unlink(`storage/${imageName}`, (err)=>{
+            if(err){
+                console.log(err)
+            }else{
+                console.log("file deleted succesfully")
+            }
+        
+    })
+    }
+
+   await Blog.findByIdAndUpdate(id,{
+        title : title,
+        subtitle : subtitle,
+        description : description,
+        image : NewimageName
+        
+    })
+    res.status(200).json({
+        message : "Blog Updated Successfully"
+    })
+})
+
 
 app.use(express.static('./storage'))
 
@@ -74,6 +144,3 @@ app.listen(process.env.PORT,()=>{
 }
 )
 
-// mongodb atlas [user] samgon23402 [psw] samgon23402
-
-// mongodb+srv://samgon23402:samgon23402@cluster0.r0qid.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
