@@ -1,146 +1,129 @@
-require("dotenv").config()
+require('dotenv').config()
+const express = require('express')
+const connectToDatabase = require('./database')
 
+const app = express() 
+app.use(express.json())
+const {multer,storage} = require('./middleware/multerConfig')
+const Blog = require('./model/blogModel')
+const upload = multer({storage : storage })
+const fs = require('fs')
+const cors = require('cors')
 
-const express = require("express")
-const conncetToDatabase = require("./database")
-const Blog = require("./model/blogModel")
-const app = express()
-const {multer, storage} = require("./middleware/multerConfig")
-const upload = multer({storage : storage})
-const fs = require("fs") // file system
-
-app.use(express.json()) // for malking understandable for the json
-
-conncetToDatabase()
-
-app.get("/", (req, res)=>{
-    // res.send("Hello World")
-    res.json({
-        message : "This is home page hai"
-    })
-
-})
-
-app.post("/blog", upload.single("image"), async (req,res)=>{
-    // const description = req.body.description
-    // const title = req.body.title
-    // const image = req.body.image
-    // const subtitle = req.body.subtitle
-    const {title, subtitle, description, image} = req.body // shortcut method for this 👆
-    console.log(req.body)
-    console.log(req.body.title)
-   
-    const filename = req.file.filename
-
-
-    //if from fron-end data is coming we have to throw this error like this👇👇
-    if(!title || !description || !subtitle ){
-        return res.status(400).json({
-            message : " Please provide  title, subtitle , description , image"
-        })
-        // return   //we can put anyware up and down
+app.use(cors(
+    {
+        origin :"http://localhost:5173"
     }
-     await Blog.create({
-        title : title, // right coloum and left one is variable which we mention on the top
-        subtitle : subtitle,
-        description : description,
-        image : filename
+))
 
-    })
-    res.status(200).json({ // this respose should be always in the last
-        message : "Blog API succcesfully hit"
+connectToDatabase()
+
+app.get("/",(req,res)=>{
+    res.status(200).json({
+        hello : "This is home page"
     })
 })
 
-app.get("/blog", async (req, res)=>{
-   const blogs = await Blog.find() // returns in array
+app.post("/blog",upload.single('image'), async (req,res)=>{
+   const {title,subtitle,description} = req.body 
+   let filename;
+   if(req.file){
+     filename = "http://localhost:3000/" + req.file.filename 
+   }else{
+    filename = "https://assets.juksy.com/files/articles/109865/6507e4326229f.jpg"
+   }
+
+   if(!title || !subtitle || !description){
+        return res.status(400).json({
+            message : "Please provide title,subtitle,description"
+        })
+        
+   }
+   await Blog.create({
+    title : title, 
+    subtitle : subtitle, 
+    description : description, 
+    image : filename
+   })
+    res.status(200).json({
+        message : "Blog api hit successfully"
+    })
+})
+
+app.get("/blog",async (req,res)=>{
+   const blogs =  await Blog.find() // returns array
    res.status(200).json({
-    message : "Blogs fetched successfully",
+    message : "Blogs fetched successfully", 
     data : blogs
    })
 })
 
-app.get("about", (req, res)=>{
-    res.status(200).json({
-        message : "This is about page"
-    })
+app.get("/blog/:id",async (req,res)=>{
+    const id = req.params.id
+    const blog =  await Blog.findById(id) // object
 
-})
-
-//day13
-app.get("/blog/:id", async(req, res)=>{
-    const id = req.params.id //this will show what user sended
-    const blog = await Blog.findById() // object
     if(!blog){
-        res.status(404).json({
-            message : "Data not found please check "
-        })
-    }else{
-        res.status(200).json({
-            message : "Fetched Successfully",
-            data : blog
+        return res.status(404).json({
+            message : "no data found"
         })
     }
+
+    res.status(200).json({
+        message : "Fetched successfully", 
+        data : blog
+    })
+  
 })
-app.delete("/blog/:id", async (req, res)=>{
+app.delete("/blog/:id",async (req,res)=>{
     const id = req.params.id
     const blog = await Blog.findById(id)
     const imageName = blog.image
-
-
-    fs.unlink(`storage/${imageName}`, (err)=>{
+ 
+    fs.unlink(`storage/${imageName}`,(err)=>{
         if(err){
             console.log(err)
         }else{
-            console.log("file deleted succesfully")
+            console.log("File deleted successfully")
         }
-        
     })
     await Blog.findByIdAndDelete(id)
-   res.status(200).json({
-    message : "Blog deleted succesfully"
-   })
-
+    res.status(200).json({
+        message : 'Blog deleted successfully'
+    })
 })
 
-//update
-app.patch('/blog/:id',upload.single("image"), async (req, res)=>{
-    const id = req.params.id
-    const {title, subtitle, description} = req.body
-    let NewimageName;
+app.patch('/blog/:id',upload.single('image'), async(req,res)=>{
+    const id = req.params.id 
+    const {title,subtitle,description} = req.body 
+    let imageName;
     if(req.file){
-        NewimageName = req.file.filename
+        imageName= "http://localhost:3000/" + req.file.filename
         const blog = await Blog.findById(id)
-        const imageName = blog.image
-
-
-        fs.unlink(`storage/${imageName}`, (err)=>{
+        const oldImageName = blog.image
+    
+        fs.unlink(`storage/${oldImageName}`,(err)=>{
             if(err){
                 console.log(err)
             }else{
-                console.log("file deleted succesfully")
+                console.log("File deleted successfully")
             }
-        
-    })
+        })
     }
-
    await Blog.findByIdAndUpdate(id,{
-        title : title,
-        subtitle : subtitle,
-        description : description,
-        image : NewimageName
-        
+        title : title, 
+        subtitle : subtitle, 
+        description : description, 
+        image : imageName
     })
     res.status(200).json({
-        message : "Blog Updated Successfully"
+        message : "Blog updated successfully"
     })
 })
+
 
 
 app.use(express.static('./storage'))
 
 app.listen(process.env.PORT,()=>{
     console.log("NodeJs project has started")
-}
-)
-
+})
