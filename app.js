@@ -12,7 +12,7 @@ const cors = require('cors')
 
 app.use(cors(
     {
-        origin :"http://localhost:5173"
+        origin :["http://localhost:5173", "https://saro-rho.vercel.app/"]
     }
 ))
 
@@ -28,7 +28,7 @@ app.post("/blog",upload.single('image'), async (req,res)=>{
    const {title,subtitle,description} = req.body 
    let filename;
    if(req.file){
-     filename = "http://localhost:3000/" + req.file.filename 
+     filename = "https://mern3-get.onrender.com/" + req.file.filename 
    }else{
     filename = "https://assets.juksy.com/files/articles/109865/6507e4326229f.jpg"
    }
@@ -97,7 +97,7 @@ app.patch('/blog/:id',upload.single('image'), async(req,res)=>{
     const {title,subtitle,description} = req.body 
     let imageName;
     if(req.file){
-        imageName= "http://localhost:3000/" + req.file.filename
+        imageName= "https://mern3-get.onrender.com/" + req.file.filename
         const blog = await Blog.findById(id)
         const oldImageName = blog.image
     
