@@ -15,11 +15,20 @@ const cors = require('cors')
 //         origin : ["http://localhost:5173", "https://saro-rho.vercel.app/"]
 //     }
 // ))
+
+// CORS Middleware
 app.use(cors({
     origin: ["http://localhost:5173", "https://saro-rho.vercel.app"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], // Allow specific methods
-    credentials: true // Include credentials if needed
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    credentials: true
 }));
+
+// Preflight Request Handler
+app.options('*', cors()); 
+
+// Static Files Middleware
+app.use(express.static('./storage'));
+
 
 
 connectToDatabase()
