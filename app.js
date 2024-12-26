@@ -12,7 +12,7 @@ const cors = require('cors')
 
 app.use(cors(
     {
-        origin :"https://saro-rho.vercel.app/"
+        origin : ["http://localhost:5173", "https://saro-rho.vercel.app/"]
     }
 ))
 
